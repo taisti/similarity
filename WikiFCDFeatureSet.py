@@ -3,8 +3,8 @@ from typing import List, Any
 
 from rdflib.plugins.sparql import prepareQuery
 
-from uta.FeatureSet import FeatureSet, FeatureDescriptor
 from WikiFCD import WikiFCD
+from uta.FeatureSet import FeatureSet, FeatureDescriptor
 
 
 class WikiFCDFeatureSet(FeatureSet):
@@ -25,10 +25,10 @@ class WikiFCDFeatureSet(FeatureSet):
                 "?item p:P8/psv:P8 [wikibase:quantityAmount ?amount; wikibase:quantityUnit <http://wikifcd.wiki.opencura.com/entity/Q8> ] ",
                 FeatureDescriptor("Total lipid [g]", 1, 100, 0)
             ),
-            # (
-            #     "?item p:P88/psv:P88 [wikibase:quantityAmount ?amount; wikibase:quantityUnit <http://wikifcd.wiki.opencura.com/entity/Q8> ] ",
-            #     FeatureDescriptor("Fatty acids, total polyunsaturated [g]", 1, 0, 100)
-            # ),
+            (
+                "?item p:P18/psv:P18 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q15 ] ",
+                FeatureDescriptor("Sodium [mg]", 1, 100000, 0)
+            )
         ]
         _template = """
             PREFIX wd: <http://www.wikidata.org/entity/>
