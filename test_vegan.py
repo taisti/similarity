@@ -6,7 +6,7 @@ from helpers import foodon
 from uta import RelativeFeatureSet, RelativeUTA
 
 
-class Vegetarian(unittest.TestCase):
+class Vegan(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.onto = foodon()
@@ -28,7 +28,7 @@ class Vegetarian(unittest.TestCase):
             obo.FOODON_00002129  # 'plant based meat product analog'
         ]
 
-        uta = RelativeUTA([OWLReadyClassMembershipFeatureSet(cls.onto, positive_classes, negative_classes),
+        uta = RelativeUTA([OWLReadyClassMembershipFeatureSet(positive_classes, negative_classes),
                            RelativeFeatureSet(WikiFCDFeatureSet())
                            ])
 

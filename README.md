@@ -67,10 +67,10 @@ odżywcze*, *Dostępność*, *Kategoria*, *Nazwa*.
 W przedstawionym rozwiązaniu wykorzystano wyłącznie następujące cechy: *Preferencja dietetyczna*, *Wartości odżywcze*,
 *Kategoria*. Pozostałe cechy zostały w bieżącej wersji pominięte z następujących powodów:
 
-* *Drugorzędne właściwości organoleptyczne* Planowano integrację z FlavorDB, która póki co okazuje się niemożliwa ze
-  względu na problemy z dostępnością usługi.
-* *Brak współwystępowania*, *Współdzielony kontekst* Na obecnym etapie zbiór danych TASTEset nie jest powiazany z
-  ontologią FoodOn.
+* *Drugorzędne właściwości organoleptyczne* Planowano integrację z FlavorDB [12], [13], która póki co okazuje się
+  niemożliwa ze względu na problemy z dostępnością usługi.
+* *Brak współwystępowania*, *Współdzielony kontekst* Na obecnym etapie zbiór danych TASTEset [14] nie jest powiazany z
+  ontologią FoodOn [15], [16].
 * *Dostępność* Na wczesnym etapie projektu podjęto decyzję o całkowitym pominięciu tej cechy jako zbyt skomplikowanej do
   zamodelowania.
 * *Nazwa* Ontologia FoodOn nie obfituje w nowoczesne produkty, które zyskałyby w ten sposób. Z drugiej strony
@@ -212,13 +212,13 @@ możliwą wartością.
 * Wprowadzona jest pomocnicza metoda `recommend`, która przyjmuje dwa argumenty: `reference` o semantyce j.w.
   oraz `variants` stanowiący kolekcję identyfikatorów. Zwracana jest para typu `Tuple[Any, float]`, której pierwszy
   element to element kolekcji `variants` dla którego wartość funkcji `U` jest największa (przy ustalonym `reference`), a
-  drugi arugment to wartość funkcji `U`. Ta funkcja pełni rolę rekomendera, który dla zadanego obiektu `reference` ma
+  drugi argument to wartość funkcji `U`. Ta funkcja pełni funkcję rekomendera, który dla zadanego obiektu `reference` ma
   wybrać najlepszą alternatywę z kolekcji `variants`.
 
 Testy jednostkowe i zarazem przykłady użycia znajdują się w
 pliku [uta/test/test_RelativeUTA.py](uta/test/test_RelativeUTA.py). Testy integracyjne wraz z mniej abstrakcyjnymi
 przykładami użycia znajdują się w plikach [test_diabetes.py](test_diabetes.py), [test_glutenfree.py](test_glutenfree.py)
-oraz [test_vegetarian.py](test_vegetarian.py).
+oraz [test_vegan.py](test_vegan.py).
 
 ## Reprezentacja wiedzy
 
@@ -228,26 +228,25 @@ Zakłada się, że każdy rozważany składnik jest identyfikowany za pomocą id
 bieżącej wersji przyjęto, że centralną częścią grafu wiedzy jest ontologia FoodOn i składniki są identyfikowane za
 pomocą IRI z jej przestrzeni nazw. Wczytywanie FoodOn zostało zaimplementowane w postaci metody `foodon` w
 pliku [helpers.py](helpers.py), która nie przyjmuje argumentów, a zwraca obiekt klasy `owlready2.Ontology` biblioteki
-owlready2 [3] zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane z
-Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
+owlready2 [3], [19] zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane
+z Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
 budowania pamięci podręcznej w katalogu `ontologies`.
 
-Dodatkowo z FoodOn powiązano [WikiFCD](https://wikifcd.wiki.opencura.com/), graf wiedzy integrujący tabele wartości
-odżwyczych pochodzące z różnych źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno
-zintegrowane z FoodOn okazało się, że tak nie jest i jednocześnie a) wiele składników w WikiFCD nie jest oznaczonych
-identyfikatorami z FoodOn; b) wiele składników z FoodOn występuje w WikiFCD, ale nie ma przypisanych żadnych informacji
-o wartościach odżywczych.
+Dodatkowo z FoodOn powiązano WikiFCD [17], [18], graf wiedzy integrujący tabele wartości odżwyczych pochodzące z różnych
+źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno zintegrowane z FoodOn okazało się, że
+tak nie jest i jednocześnie a) wiele składników w WikiFCD nie jest oznaczonych identyfikatorami z FoodOn; b) wiele
+składników z FoodOn występuje w WikiFCD, ale nie ma przypisanych żadnych informacji o wartościach odżywczych.
 
 W pliku [wikifcd2foodon.json](wikifcd2foodon.json) znajdują się wszystkie powiązania między encjami WikiFCD oraz FoodOn,
 wygenerowane 29.06.2022 za pomocą następującego zapytania SPARQL zadanego do
 końcówki [https://wikifcd.wiki.opencura.com/query/](https://wikifcd.wiki.opencura.com/query/):
 
 ```sparql    
-    PREFIX p: <http://wikifcd.wiki.opencura.com/prop/>    
-    PREFIX ps: <http://wikifcd.wiki.opencura.com/prop/statement/> 
-    SELECT *    WHERE {
-        ?item p:P309/ps:P309 ?foodon.
-    }
+PREFIX p: <http://wikifcd.wiki.opencura.com/prop/>    
+PREFIX ps: <http://wikifcd.wiki.opencura.com/prop/statement/> 
+SELECT * WHERE {
+    ?item p:P309/ps:P309 ?foodon.
+}
 ```
 
 Łącznie jest 1145 powiązań, podczas gdy w FoodOn samych podklas klasy *food product* `FOODON_00001002` jest 13989 (patrz
@@ -289,6 +288,140 @@ błędu HTTP 503 Service Temporarily Unavailable.
 
 ### Transformacja do postaci wektora liczbowego
 
+W celu przejścia z reprezentacji w formie grafu wiedzy do reprezentacji w formie wektorów liczbowych, wymaganych przez
+metodę UTA zaproponowano dwie klasy: `OWLReadyClassMembershipFeatureSet` zaimplementowaną w
+pliku [OWLReadyClassMembershipFeatureSet.py](OWLReadyClassMembershipFeatureSet.py) oraz `WikiFCDFeatureSet`
+zaimplementowaną w pliku [WikiFCDFeatureSet](WikiFCDFeatureSet.py). Obie klasy implementują klasę
+abstrakcyjną `uta.FeatureSet`.
+
+Konstruktor klasy `OWLReadyClassMembershipFeatureSet` oczekuje jako argumentów dwóch sekwencji zawierających obiekty
+biblioteki owlready2 reprezentujące nazwane klasy lub wyrażenia klasowe, oznaczone łącznie dalej
+jako `ClassExpression`: `positive_classes` oraz `negative_classes`. Każde z wyrażeń z obu sekwencji tworzy odrębną
+cechę, która przyjmuje wartości 0 lub 1. Dla wyrażeń z `positive_classes` 1 jest wartością najlepszą, podczas gdy
+dla `negative_classes` 0 jest wartością najlepszą. Niech `classes` reprezentuje sklejenie list `positive_classes`
+i `negative_classes`: `classes = positive_classes + negative_classess`. Metoda `compute` oczekuje jednego argumentu
+typu `ClassExpression` i zwraca wektor długości `len(classes)` taki, że `i`-ty element przyjmuje w nim wartość 1 jeżeli
+argument jest podklasą `i`-tego wyrażenia na liście `classes` i 0 w przeciwnym przypadku (tzn. gdy nie można wykazać, że
+jest podklasą).
+
+Należy zwrócić uwagę, że owlready2 nie udostępnia efektywnego mechanizmu odpytywania o zachodzenie zawierania się
+wyrażeń klasowych. Tymczasowo zastosowano przybliżone rozwiązanie za pomocą bardzo ograniczonej implementacji indukcji
+strukturalnej w jako funkcję `is_subclass` w pliku [helpers.py](helpers.py). Przedstawiona implementacja jest poprawna (
+ang. sound), ale nie kompletna (ang. complete) i docelowo powinna zostać zastąpiona rozwiązaniem, które posiada obie te
+cechy.
+
+Klasa `WikiFCDFeatureSet` korzysta z opisanej wcześniej klasy `WikiFCD` do zbierania danych o wartościach odżywczych z
+WikiFDC. Graf zwrócony przez obiekt klasy `WikiFDC` jest odpytywany za pomocą zapytań SPARQL o cztery, zdefiniowane
+poniżej wartości. Wykorzystywana jest następująca konwencja: `?item` to obiekt, dla którego jest odczytywana
+wartość; `?amount` to odczytywana wartość; prefiks `p:` reprezentuje przestrzeń
+nazw `<http://wikifcd.wiki.opencura.com/prop/>`, `psv:` - `<http://wikifcd.wiki.opencura.com/prop/statement/value/>`
+, `wikibase:` - `<http://wikiba.se/ontology#>`, a `wb:` - `<http://wikifcd.wiki.opencura.com/entity/>`.
+
+* Energię wyrażoną w kilokaloriach za pomocą
+  wzorca `?item p:P6/psv:P6 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q11 ]`
+* Białko w gramach za pomocą wzorca `?item p:P7/psv:P7 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q8 ]`
+* Tłuszcz w gramach za pomocą wzorca `?item p:P8/psv:P8 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q8 ]`
+* Sód w miligramach za pomocą
+  wzorca `?item p:P18/psv:P18 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q15 ]`
+
+Reprezentacja wszystkich cech jest ustawiona jako składająca się z jednego odcinka liniowego. Białko jest ustawione jako
+cecha maksymalizowana, natomiast pozostałe cechy jako minimalizowane. Metoda `compute` oczekuje identyfikatora IRI z
+onotologi FoodOn w formie łańcucha znaków `str` albo obiektu, którego atrybut `iri` będzie takim identyfikatorem.
+
+Przykłady użycia obu klas zawarte są w testach integracyjnych w plikach [test_diabetes.py](test_diabetes.py),
+[test_glutenfree.py](test_glutenfree.py) oraz [test_vegan.py](test_vegan.py).
+
+## Przypadki użycia
+
+### Cukrzyca
+
+Założono, że w diecie cukrzycowej preferowane powinny być produkty o niskim indeksie glikemicznym (IG). Ani w FoodOn,
+ani w WikiFCD indeks glikemiczny nie jest dostępny, stanowi on zatem złoty standard, z którego nie można bezpośrednio
+skorzystać w obliczeniach, ale który można wykorzystać do oceny. W ramach testu przedstawionego w klasie `Diabetes`
+zaimplementowanej w pliku [test_diabetes.py](test_diabetes.py) wykorzystano
+`uta.RelativeUTA` oparte na cecach generowanych przez `WikiFCDFeatureSet` oraz na ich wartościach zrelatywizowanych za
+pomocą `RelativeFeatureSet`. Jako złoty standard wykorzystano informacje pochodzące z [7]. W ramach zbioru uczącego (
+znanego preporządku) wykorzystano trzy mąki, przedstawione w kolejności od najlepszej do najgorszej: *soybean
+flour* `obo.FOODON_03302142` (niski IG), *rye flour* `obo.FOODON_03302492` (średni IG), *white rice
+flour* `obo.FOODON_03307541` (wysoki IG). Jako zbiór kandydatów, z którego należało dokonać wyboru i jednocześnie zbiór
+obiektów, które były zastępowane, wykorzystano następujące rodzaje mąki: *tapioca flour* `obo.FOODON_03310681` (wysoki
+IG),
+*brown rice flour* `obo.FOODON_00003351` (średni IG), *potato starch* `obo.FOODON_03307543` (wysoki IG), *chickpea
+flour* `obo.FOODON_03304537` (niski IG). Obliczona miara we wszystkich przypadkach prawidłowo wskazała (przy użyciu
+metody `uta.RelativeUTA.recommend`) *chickpea flour* `obo.FOODON_03304537` jako najlepszy zastępnik dla wszystkich
+czterech rodzajów mąki, natomiast po usunięciu *chickpea flour* ze zbioru - *brown rice flour* `obo.FOODON_00003351`
+jako zastępnik dla wszystkich trzech pozostałych rodzajów mąki.
+
+### Dieta bezglutenowa
+
+Na podstawie [8] przyjęto, że w diecie bezglutenowej należy unikać pszenicy, jęczmienia, żyta oraz owsa. Opisany
+przypadek użycia został zaimplementowany w klasie `GlutenFree` w pliku [test_glutenfree.py](test_glutenfree.py).
+Wykorzystano `uta.RelativeUTA` oraz trzy sposoby konstruowania cech:
+
+* Przynależność do wyrażenia klasowego *wheat food product* OR *barley food product* OR *oat food product* OR *rye food
+  product* OR *triticale food
+  product* `FOODON_00001141 | FOODON_00001191 | FOODON_00001189 | FOODON_00001190 | FOODON_00002552`
+  jako cecha minimalizowana obliczana za pomocą `OWLReadyClassMembershipFeatureSet`
+* Przynależność do wyrażenia klasowego *gravy or sauce* `FOODON_00001931` jako cecha względna obliczana za pomocą
+  klas `RelativeFeatureSet` oraz `OWLReadyClassMembershipFeatureSet`
+* Względne wartości odżywcze obliczane za pomocą `RelativeFeatureSet(WikiFCDFeatureSet())`
+
+Jako zbiór uczący przedstawiono dwa rankingi oparte o [9]:
+
+* Ranking I
+    1. *buckwheat noodle* `FOODON_03309979`, *shirataki noodle* `FOODON_03311767`
+    2. *pasta* `FOODON_03306347`
+    3. *apple (whole, raw)* `FOODON_03301710`
+* Ranking II
+    1. *sorghum seed (whole)* `FOODON_00003751`, *rice (polished)* `FOODON_03304560`
+    2. *barley (pearled)* `FOODON_03306062`
+    3. *apple (whole, raw)* `FOODON_03301710`
+
+Jako zbiór kandydatów przyjęto następujące encje: *red kidney bean (canned)* `FOODON_03303520`, *apple (whole,
+raw)* `FOODON_03301710`, *canola oil* `FOODON_03302578`, *wheat gluten* `FOODON_03310809`,
+*lard* `FOODON_03302051`, *white rice flour* `FOODON_03307541`, *whole wheat flour* `FOODON_03302340`, *tamari
+sauce* `FOODON_03309556`. Testy potwierdzają, że obliczona dla podanej listy kandydatów prawidłowo wskazuje *white rice
+flour* jako bezglutenowy odpowiednik *whole wheat flour* oraz *tamari sauce* jako bezglutenowy odpowiednik zarówno dla *
+tamari sauce* jak i dla *soy sauce* `FOODON_03301115`.
+
+W nawiązaniu do dyskusji we wstępie należy podkreślić, że jeżeli mowa o diecie faktycznie bezglutenowej, a nie
+niskoglutenowej, to zbiór potencjalnych zastępników musi być wstępnie przefiltrowany tak, żeby wybór najlepszego
+zastępnika dokonywany był wyłącznie spośród produktów niezawierających glutenu. Należy również zaznaczyć, że FoodOn
+wydaje się nie być dobrym źródłem wiedzy w tym zakresie, przykładowo sos sojowy wytwarzany jest przy udziale zarówno
+soi, jak i pszenicy, co jednak nie wynika z opisu encji *soy sauce* `FOODON_03301115`.
+
+### Dieta wegetariańska
+
+W klasie `Vegan` zaimplementowanej w pliku [test_vegan.py](test_vegan.py) opracowano przypadek wyboru subsytutu w diecie
+wegańskiej. Wykorzystano `uta.RelativeUTA` oraz dwa zbiory cech:
+
+* Przynależność do klas obliczana za pomocą `OWLReadyClassMembershipFeatureSet`, gdzie zbiór klas pozytywnych składał
+  się z jednego wyrażenia klasowego *algal food product* OR *fungus food product* OR *microbial food product* OR *plant
+  food product* OR *plant based refined or partially-refined food product* OR *plant based meat product analog*
+  `FOODON_00001184 | FOODON_00001143 | FOODON_00001145 | FOODON_00001015 | FOODON_00002131 | FOODON_00002129`
+  natomiast zbiór klas negatywnych z dwóch wyrażeń: *vertebrate animal food product* OR *seafood product* OR
+  *invertebrate food product* `FOODON_00001092 | FOODON_00001046 | FOODON_00001176` oraz *spice or
+  herb* `FOODON_00001242`
+* Względne wartości odżywcze `RelativeFeatureSet(WikiFCDFeatureSet())`
+
+Jako zbiór uczący wykorzystano dwa rankingi:
+
+* Opracowany na podstawie [10]:
+    1. *imitation bacon bit* `FOODON_03305199`
+    2. *bacon (smoked)* `FOODON_03309992`
+    3. *apple (whole, raw)* `FOODON_03301710`
+* Opracowany na podstawie [11]:
+    1. *tempeh* `FOODON_03304999`, *tofu food product* `FOODON_03309664`, *vegetable protein (
+       textured)* `FOODON_03311469`
+    2. *beef (raw)* `FOODON_03309737`, *turkey (raw, ground)* `FOODON_03311109`
+    3. *thyme (dried)* `FOODON_03301215`, *vanilla bean (whole)* `FOODON_00003738`
+
+Rozważano zbiór składający się z pięciu możliwych zastępników: *red kidney bean (canned)* `FOODON_03303520`, *apple (
+whole, raw)* `FOODON_03301710`, *canola oil* `FOODON_03302578`, *wheat gluten* `FOODON_03310809`,
+*lard* `FOODON_03302051`. W ramach testów wykazano, że zarówno *beef (raw)* `FOODON_03309737` jak i *pork (
+fresh)* `FOODON_03317271` są prawidłowo zamieniane na *red kidney bean (canned)*; *tallow (
+edible)* `FOODON_03315521` na *canola oil* (zamiast na *lard*), a *honey* `UBERON_0036016` na *apple (whole, raw)*.
+
 ## Bibliografia
 
 [1]: https://www.w3.org/TR/turtle/
@@ -303,6 +436,38 @@ Making: The UTA Method,” Eur J of Oper Res, 10(2), 1982, 151-164.
 [5]: http://www.cs.put.poznan.pl/imaslowska/wd/lab9/Metoda%20UTA.pdf
 
 [6]: https://www.cvxpy.org/
+
+[7]: https://www.gifoundation.com/food-list/flour/
+
+[8]: https://en.wikipedia.org/w/index.php?title=Gluten&oldid=1093810749
+
+[9]: https://www.cooksmarts.com/articles/gluten-free-diet-substitutions-list/
+
+[10]: http://www.foodsubs.com/MeatcureBacon.html
+
+[11]: http://www.foodsubs.com/Meats.html
+
+[12]: https://cosylab.iiitd.edu.in/flavordb/
+
+[13]: Garg N, Sethupathy A, Tuwani R, Nk R, Dokania S, Iyer A, Gupta A, Agrawal S, Singh N, Shukla S, Kathuria K,
+Badhwar R, Kanji R, Jain A, Kaur A, Nagpal R, Bagler G. FlavorDB: a database of flavor molecules. Nucleic Acids Res.
+2018 Jan 4;46(D1):D1210-D1216. doi: 10.1093/nar/gkx957. PMID: 29059383; PMCID: PMC5753196.
+
+[14]: Anna Wróblewska, Agnieszka Kaliska, Maciej Pawlowski, Dawid Wisniewski, Witold Sosnowski, Agnieszka Lawrynowicz:
+TASTEset - Recipe Dataset and Food Entities Recognition Benchmark. CoRR abs/2204.07775 (2022) https://arxiv.org/abs/2204.07775
+
+[15]: https://foodon.org/
+
+[16]: Dooley, D.M., Griffiths, E.J., Gosal, G.S. et al. FoodOn: a harmonized food ontology to increase global food
+traceability, quality control and data integration. npj Sci Food 2, 23 (2018). https://doi.org/10.1038/s41538-018-0032-6
+
+[17]: https://wikifcd.wiki.opencura.com/
+
+[18]: Katherine Thornton, Kenneth Seals-Nutt, Mika Matsuzaki: Introducing WikiFCD: Many Food Composition Tables in a
+Single Knowledge Base. JOWO 2021
+
+[19]: Lamy JB. Owlready: Ontology-oriented programming in Python with automatic classification and high level constructs
+for biomedical ontologies. Artificial Intelligence In Medicine 2017;80:11-28
 
 ## Załącznik I: Zliczanie podklas klasy `FOODON_00001002`
 

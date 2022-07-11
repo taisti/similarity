@@ -26,8 +26,8 @@ class GlutenFree(unittest.TestCase):
             obo.FOODON_00001931  # gravy or sauce
         ]
 
-        uta = RelativeUTA([OWLReadyClassMembershipFeatureSet(cls.onto, [], negative_classes),
-                           RelativeFeatureSet(OWLReadyClassMembershipFeatureSet(cls.onto, positive_classes, [])),
+        uta = RelativeUTA([OWLReadyClassMembershipFeatureSet([], negative_classes),
+                           RelativeFeatureSet(OWLReadyClassMembershipFeatureSet(positive_classes, [])),
                            RelativeFeatureSet(WikiFCDFeatureSet())
                            ])
         # https://www.cooksmarts.com/articles/gluten-free-diet-substitutions-list/

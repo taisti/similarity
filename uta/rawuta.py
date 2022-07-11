@@ -39,5 +39,5 @@ class RawUTA:
         prob = cp.Problem(goal, self.constraints)
         return prob.solve()
 
-    def U(self, xs: Sequence[float]) -> cp.Expression:
+    def U(self, xs: Iterable[float]) -> cp.Expression:
         return sum(ui.expr(x) for x, ui in zip(xs, self.u))

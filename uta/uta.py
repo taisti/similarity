@@ -12,7 +12,7 @@ class UTA:
 
     def __init__(self, features: List[FeatureSet], same_tier_is_equivalent=False):
         self.features = features
-        raw_features = chain(*[[(f.n, f.worst, f.best) for f in fset.descriptors] for fset in self.features])
+        raw_features = list(chain(*[[(f.n, f.worst, f.best) for f in fset.descriptors] for fset in self.features]))
         self.uta = RawUTA(raw_features, same_tier_is_equivalent=same_tier_is_equivalent)
 
     def add(self, reference_ranking: List[Collection[str]]):

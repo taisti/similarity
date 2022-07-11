@@ -1,9 +1,10 @@
 import logging
-from typing import List, Any
+from typing import List, Union
 
 from rdflib.plugins.sparql import prepareQuery
 
 from WikiFCD import WikiFCD
+from helpers import NamedClass
 from uta.FeatureSet import FeatureSet, FeatureDescriptor
 
 
@@ -48,7 +49,7 @@ class WikiFCDFeatureSet(FeatureSet):
     def descriptors(self) -> List[FeatureDescriptor]:
         return self._descriptors
 
-    def compute(self, id: Any) -> List[float]:
+    def compute(self, id: Union[NamedClass, str]) -> List[float]:
         if hasattr(id, 'iri'):
             id = id.iri
         g = self._wikifcd[id]
