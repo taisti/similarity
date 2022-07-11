@@ -4,3 +4,4 @@ wikifcd/
 .idea/
 .ipynb_checkpoints/
 ontologies/
+*.local.*
