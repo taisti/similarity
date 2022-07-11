@@ -80,6 +80,75 @@ W przedstawionym rozwiązaniu wykorzystano wyłącznie następujące cechy: *Pre
 Przedstawiona metoda tworzenia miar nie jest zamknięta na wprowadzanie nowych cech i kolejne wersje mogą wykorzystywać
 wymienione powyżej cechy.
 
+## UTA
+
+Jako bazę dla zaproponowanej metody tworzenia miar wykorzystano metodę wielokryterialnego wspomagania decyzji UTA [4].
+Bardziej szczegółowe, a przystępnie napisane wprowadzenie do UTA można znaleźć w [5], poniżej natomiast przedstawiono
+podsumowanie najważniejszych aspektów. Ze względu na spodziewane grono odbiorców raportu zapożycza się stosowane w
+uczeniu masznowym pojęcia, m.in., *parametru* jako wartości liczbowej dobieranej automatycznie w procesie optymalizacji
+oraz *hiperparametru* jako parametru konfiguracyjnego zwyczajowo ustawianego przez użytkownika. Należy podkreślić, że
+nie są to terminy zwyczajowo stosowane w kontekście metod wielokryterialnego wspomagania decyzji.
+
+UTA zakłada, że istnieje pewien zbiór obiektów (wariantów) opisanych cechami liczbowymi. Każda z cech może być albo
+maksymalizowana albo minimalizowana (hiperparametr), znana jest też jej wartość najlepsza i najgorsza (hiperparamter). W
+UTA cechy transformowane są za pomocą niemalejących/nierosnących, nieujemnych funkcji odcinkami liniowych, tworząc
+tzw. *cząstkowe funkcje użyteczności*, przy czym liczba odcinków dla każdej z funkcji jest hiperparametrem, natomiast
+wartości współczynników kierunkowych i wyrazów wolnych są parametrami. Dla kryterium maksymalizowanego funkcja jest
+niemalejąca, natomiast dla kryterium minimalizowanego - nierosnąca.
+
+Cząstkowe funkcje użyteczności są sumowane (po wszystkich cechach) do *globalnej funkcji użyteczności* `U`, przy czym
+wprowadza się dodatkowy czynnik regularyzacyjny wymagający, aby globalna funkcja użyteczności dla szutcznego obiektu
+składającego się wyłącznie z najgorszych wartości cech wynosiła 0, natomiast dla sztucznego obiektu składającego się
+wyłącznie z najlepszych wartości cech wynosiła 1.
+
+Zakłada się ponadto, że pomiędzy niektórymi obiektami znana jest relacja preporządku, pełniąca rolę odpowiednika zbioru
+uczącego: dla dwóch obiektów `a`, `b` wiadomo albo, że `a` jest preferowany nad `b`, co powinno zostać odwzorowane przez
+globalną funkcję użyteczności jako `U(a) > U(b)`, albo że są nierozróżnialne, co powinno zostać odwzorowane
+jako `U(a) = U(b)`.
+
+W odróżnieniu od metod uczenia maszynowego zamiast optymalizacji gradientowej stosuje się reprezentację jako problem
+matematycznego programowania liniowego i rozwiązuje przy wykorzystaniu tzw. solwerów. Należy zaznaczyć, że nie jest to
+reprezentacja w formie całkowitoliczbowego programowania liniowego i w związku z tym znalezienie rozwiązania odbywa się
+w czasie wielomianowym.
+
+Wynikiem działania UTA jest globalna funkcja użyteczności `U`, która definiuje preporządek na wszystkich rozważanych
+wariantach: `a` jest preferowane nad `b` jeżeli `U(a) > U(b)` albo `a` jest nierozróżnialne z `b` jeżeli `U(a) = U(b)`.
+
+Konsultacja z prof. Miłoszem Kadzińskim wykazała, że nie ma ogólnie przyjętej, powszechnie używanej biblioteki metod
+wspomagania decyzji w Pythonie. W związku z prostotą UTA podjęto decyzję o samodzielnej implementacji przy wykorzystaniu
+solwera cvxpy [6]. Implementacja dostępna jest w klasie `uta.RawUTA` w pliku [uta/rawuta.py](uta/rawuta.py). Konstruktor
+klasy `RawUTA` przyjmuje dwa argumenty:
+
+* `features` typu `Sequence[Tuple[int, float, float]]` - Sekwencja (np. lista) opisująca hiperparametry cech w formie
+  trójek, składających się kolejno z: liczby odcinków liniowych, wartości najgorszej, wartości najlepszej.
+* `same_tier_is_equivalent` typu `bool` - Parametr konfiguracyjny wskazujący jak interpretować argumenty opisanej
+  poniżej metody `add`.
+
+Obiekt klasy `RawUTA` w ramach publicznego API oferuje trzy metody:
+
+* Dwuargumentową metodę `add` dodającą informacje o znanej relacji preporządku o następujących argumentach:
+    * `reference_ranking` typu `Sequence[Collection[Any]]`, stanowiące sekwencję kolekcji identyfikatorów obiektów.
+      Obiekty z kolekcji `reference_ranking[i]` są preferowane nad obiektami z kolekcji `reference_ranking[j]` dla
+      wszystkich `j>i`. Jeżeli `same_tier_is_equivalent` było ustawione na `True`, to obiekty w obrębie
+      kolekcji `reference_ranking[i]` (dla każdego `i`) są uznawane za nierozróżnialne; w przeciwnym razie nie są
+      dodawane żadne ograniczenia dotyczące par obiektów z tej samej kolekcji `reference_ranking[i]`.
+    * `variants` typu `Mapping[Any, Sequence[float]]` stanowiące odwzorowanie między identyfikatorami obiektów używanymi
+      w `reference_ranking`, a wartościami cech w tym samym porządku, który był użyty w arugmencie `features`
+      konstruktora.
+
+  Metodę `add` można wywoływać wielokrotnie w celu dodania kolejnych informacji o znanej relacji preporządku, przy czym
+  należy zaznaczyć, że `add` polega na globalnej unikalności identyfikatorów w `reference_ranking`, tzn. w przypadku
+  odwołania do obiektu z tym samym identyfikatorem w kolejnych wywołaniach `add` oczekuje się, że wartości w `variants`
+  przypisane temu identyfikatorowi będą identyczne, a dodawane relacje spójne między sobą.
+* Bezargumentową metodę `solve`, którą należy wywołać po wszystkich wywołaniach `add` w celu rozwiązania problemu
+  programowania liniowego.
+* Jednoargumenowej metody `U`, której jedyny argument to sekwencja wartości cech opisujących obiekt, dla którego ma być
+  obliczona wartość globalnej funkcji użyteczności `U`. Zwracany jest obiekt typu `cp.Expression`, którego wartość
+  liczbową można odczytać za pomocą pola `value`.
+
+Testy jednostkowe oparte na [5], a zarazem przykłady użycia klasy `uta.RawUTA` znajdują się w
+pliku [uta/test/test_rawuta.py](uta/test/test_rawuta.py).
+
 ## Reprezentacja wiedzy
 
 ### Wykorzystane grafy wiedzy
@@ -87,10 +156,10 @@ wymienione powyżej cechy.
 Zakłada się, że każdy rozważany składnik jest identyfikowany za pomocą identyfikatorów (IRI) encji z grafu wiedzy. W
 bieżącej wersji przyjęto, że centralną częścią grafu wiedzy jest ontologia FoodOn i składniki są identyfikowane za
 pomocą IRI z jej przestrzeni nazw. Wczytywanie FoodOn zostało zaimplementowane w postaci metody `foodon` w
-pliku `helpers.py`, która nie przyjmuje argumentów, a zwraca obiekt klasy `owlready2.Ontology` biblioteki owlready2 [3]
-zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane z Internetu,
-natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm budowania pamięci
-podręcznej w katalogu `ontologies`.
+pliku [helpers.py](helpers.py), która nie przyjmuje argumentów, a zwraca obiekt klasy `owlready2.Ontology` biblioteki
+owlready2 [3] zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane z
+Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
+budowania pamięci podręcznej w katalogu `ontologies`.
 
 Dodatkowo z FoodOn powiązano [WikiFCD](https://wikifcd.wiki.opencura.com/), graf wiedzy integrujący tabele wartości
 odżwyczych pochodzące z różnych źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno
@@ -98,8 +167,8 @@ zintegrowane z FoodOn okazało się, że tak nie jest i jednocześnie a) wiele s
 identyfikatorami z FoodOn; b) wiele składników z FoodOn występuje w WikiFCD, ale nie ma przypisanych żadnych informacji
 o wartościach odżywczych.
 
-W pliku `wikifcd2foodon.json` znajdują się wszystkie powiązania między encjami WikiFCD oraz FoodOn, wygenerowane
-29.06.2022 za pomocą następującego zapytania SPARQL zadanego do
+W pliku [wikifcd2foodon.json](wikifcd2foodon.json) znajdują się wszystkie powiązania między encjami WikiFCD oraz FoodOn,
+wygenerowane 29.06.2022 za pomocą następującego zapytania SPARQL zadanego do
 końcówki [https://wikifcd.wiki.opencura.com/query/](https://wikifcd.wiki.opencura.com/query/):
 
 ```sparql    
@@ -117,24 +186,25 @@ w [http://wikifcd.wiki.opencura.com/entity/Q569378](http://wikifcd.wiki.opencura
 nie oferuje żadnych informacji o wartościach odżywczych dla tej encji.
 
 Żeby rozwiązać oba problemy zaproponowano tymczasowe rozwiązanie polegające na ręcznym odwzorowywaniu identyfikatorów
-FoodOn i WikiFCD w formie pliku tekstowego `wikifcd2foodon.tsv`. Podczas wczytywania pliku linie puste, linie składające
-się wyłącznie z białych znaków oraz linie, w których pierwszy nie-biały znak to `#` są ignorowane. Pozostałe linie
-dzielone są po białych znakach i uwzględniane są wyłącznie pierwsze dwa elementy wynikające z podziału. Oczekuje się, że
-pierwszy element będzie identyfikatorem z WikiFCD, albo w formie pełnego IRI, albo w formie wyłącznie części lokalnej (
-ang. local part, [1]), w tej sytuacji jest uzupełniany o prefiks `http://wikifcd.wiki.opencura.com/entity/` do
-utworzenia pełnego IRI. Analogicznie, dla drugiego elementu oczekuje się, że jest to albo pełne IRI encji z FoodOn, albo
-część lokalna, która zostaje uzupełniona prefiksem `http://purl.obolibrary.org/obo/`. Odwzorowania
-w `wikifcd2foodon.tsv` mają priorytet nad tymi zgromadzonymi w `wikifcd2foodon.json`, tzn. w razie odwzorowania encji z
-FoodOn w obu plikach uwzględniane jest to z `wikifcd2foodon.tsv`.
+FoodOn i WikiFCD w formie pliku tekstowego [wikifcd2foodon.tsv](wikifcd2foodon.tsv). Podczas wczytywania pliku linie
+puste, linie składające się wyłącznie z białych znaków oraz linie, w których pierwszy nie-biały znak to `#` są
+ignorowane. Pozostałe linie dzielone są po białych znakach i uwzględniane są wyłącznie pierwsze dwa elementy wynikające
+z podziału. Oczekuje się, że pierwszy element będzie identyfikatorem z WikiFCD, albo w formie pełnego IRI, albo w formie
+wyłącznie części lokalnej (ang. local part, [1]), w tej sytuacji jest uzupełniany o
+prefiks `http://wikifcd.wiki.opencura.com/entity/` do utworzenia pełnego IRI. Analogicznie, dla drugiego elementu
+oczekuje się, że jest to albo pełne IRI encji z FoodOn, albo część lokalna, która zostaje uzupełniona
+prefiksem `http://purl.obolibrary.org/obo/`. Odwzorowania w [wikifcd2foodon.tsv](wikifcd2foodon.tsv) mają priorytet nad
+tymi zgromadzonymi w [wikifcd2foodon.json](wikifcd2foodon.json), tzn. w razie odwzorowania encji z FoodOn w obu plikach
+uwzględniane jest to z `[wikifcd2foodon.tsv](wikifcd2foodon.tsv).
 
-Integracja z WikiFCD została zaimplementowana w formie klasy `WikiFCD` w pliku `WikiFCD.py`. Wczytywanie odwzorowań z
-plików odbywa się w bezparametrowym konstruktorze klasy, natomiast pobieranie informacji z WikiFCD odbywa się za pomocą
-operatora `[]`, którego jedynym argumentem jest łańcuch znaków (`str`) stanowiący pełne IRI encji z FoodOn. Zwracana
-wartość to albo `None` jeżeli nie znaleziono odwzorowania dla encji i w związku z tym nie można pobrać danych
-z `WikiFCD`, albo para typu `Tuple[rdflib.URIRef, rdflib.Graph]`, gdzie pierwszy element pary to IRI z WikiFCD odczytany
-z odwzorowań wczytanych w konstruktorze, a przedstawiony jako obiekt klasy `URIRef` biblioteki rdflib [2], a drugi
-element to graf RDF zawierający fragment WikiFCD opisujący encję, której IRI zostało zwrócone jako pierwszy element
-pary.
+Integracja z WikiFCD została zaimplementowana w formie klasy `WikiFCD` w pliku [WikiFCD.py](WikiFCD.py). Wczytywanie
+odwzorowań z plików odbywa się w bezparametrowym konstruktorze klasy, natomiast pobieranie informacji z WikiFCD odbywa
+się za pomocą operatora `[]`, którego jedynym argumentem jest łańcuch znaków (`str`) stanowiący pełne IRI encji z
+FoodOn. Zwracana wartość to albo `None` jeżeli nie znaleziono odwzorowania dla encji i w związku z tym nie można pobrać
+danych z `WikiFCD`, albo para typu `Tuple[rdflib.URIRef, rdflib.Graph]`, gdzie pierwszy element pary to IRI z WikiFCD
+odczytany z odwzorowań wczytanych w konstruktorze, a przedstawiony jako obiekt klasy `URIRef` biblioteki rdflib [2], a
+drugi element to graf RDF zawierający fragment WikiFCD opisujący encję, której IRI zostało zwrócone jako pierwszy
+element pary.
 
 Klasa `WikiFCD` nie operuje na zrzucie WikiFCD, zamiast tego komunikuje się bezpośrednio z kopią WikiFCD dostępną w
 Internecie. Dla zwiększenia efektywności klasa `WikiFCD` tworzy pamięć podręczną zawierającą pobrane fragmenty grafów,
@@ -143,9 +213,10 @@ usuwania niepotrzebnych bądź nieaktualnych wpisów z pamięci podręcznej. Pam
 nieskompresowanych plików w formacie Turtle (z rozszerzeniem `ttl`), o nazwach odpowiadających częściom lokalnym
 identyfikatorom z WikiFCD.
 
-Na dzień 11.07.2022 WikiFCD ostatni udany dostęp do Internetowej kopii WikiFCD był 04.07.2022, od tego czasu zwracany
-jest kod błędu HTTP 503 Service Temporarily Unavailable.
+Na dzień 11.07.2022 ostatni udany dostęp do Internetowej kopii WikiFCD był 04.07.2022, od tego czasu zwracany jest kod
+błędu HTTP 503 Service Temporarily Unavailable.
 
+### Transformacja do postaci wektora liczbowego
 
 ## Bibliografia
 
@@ -155,14 +226,19 @@ jest kod błędu HTTP 503 Service Temporarily Unavailable.
 
 [3]: https://owlready2.readthedocs.io/
 
+[4]: Jacquet-Lagréze, E. and J. Siskos, “Assessing a Set of Additive Utility Functions for Multicriteria Decision
+Making: The UTA Method,” Eur J of Oper Res, 10(2), 1982, 151-164.
+
+[5]: http://www.cs.put.poznan.pl/imaslowska/wd/lab9/Metoda%20UTA.pdf
+
+[6]: https://www.cvxpy.org/
+
 ## Załącznik I: Zliczanie podklas klasy `FOODON_00001002`
 
 ```python
-import owlready2
+from helpers import foodon
 
-url = 'https://github.com/FoodOntology/foodon/blob/master/foodon.owl?raw=true'
-owlready2.onto_path.append('ontologies/')
-queue = [owlready2.get_ontology(url).load().search_one(iri="http://purl.obolibrary.org/obo/FOODON_00001002")]
+queue = [foodon().search_one(iri="http://purl.obolibrary.org/obo/FOODON_00001002")]
 visited = set()
 while len(queue) > 0:
     e = queue.pop(0)
