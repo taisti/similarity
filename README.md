@@ -82,6 +82,8 @@ wymienione powyżej cechy.
 
 ## UTA
 
+### Wprowadzenie do metody UTA
+
 Jako bazę dla zaproponowanej metody tworzenia miar wykorzystano metodę wielokryterialnego wspomagania decyzji UTA [4].
 Bardziej szczegółowe, a przystępnie napisane wprowadzenie do UTA można znaleźć w [5], poniżej natomiast przedstawiono
 podsumowanie najważniejszych aspektów. Ze względu na spodziewane grono odbiorców raportu zapożycza się stosowane w
@@ -113,6 +115,8 @@ w czasie wielomianowym.
 
 Wynikiem działania UTA jest globalna funkcja użyteczności `U`, która definiuje preporządek na wszystkich rozważanych
 wariantach: `a` jest preferowane nad `b` jeżeli `U(a) > U(b)` albo `a` jest nierozróżnialne z `b` jeżeli `U(a) = U(b)`.
+
+### Implementacja - klasa `uta.RawUTA`
 
 Konsultacja z prof. Miłoszem Kadzińskim wykazała, że nie ma ogólnie przyjętej, powszechnie używanej biblioteki metod
 wspomagania decyzji w Pythonie. W związku z prostotą UTA podjęto decyzję o samodzielnej implementacji przy wykorzystaniu
@@ -148,6 +152,73 @@ Obiekt klasy `RawUTA` w ramach publicznego API oferuje trzy metody:
 
 Testy jednostkowe oparte na [5], a zarazem przykłady użycia klasy `uta.RawUTA` znajdują się w
 pliku [uta/test/test_rawuta.py](uta/test/test_rawuta.py).
+
+### Implementacja - klasa `uta.UTA`
+
+Klasa `uta.RawUTA` ma stosunkowo niewygodny interfejs. W związku z tym wprowadzono klasę `uta.UTA` zdefiniowaną w
+pliku [uta/uta.py](uta/uta.py) oraz wykorzystywane przez nią klasy `uta.FeatureSet` oraz `uta.FeatureDescriptor`
+zdefiniowane w pliku [uta/FeaturerSet.py](uta/FeaturerSet.py). `uta.FeatureDescriptor` to `dataclass`, której rolą jest
+przechowywanie informacji pojedynczej cesze: nazwie (pole `name` typu `str`), liczbie odcinków w funkcji odcinkami
+liniowej (pole `n` typu `int`), wartości najgorszej (pole `worst` typu `float`) oraz najlepszej (pole `best`
+typu `float`).
+
+`uta.FeatureSet` to klasa abstrakcyjna, którą klasa `uta.UTA` wykorzystuje do pozyskiwania wartości cech. Głównym
+elementem klasy jest metoda `compute`, która przyjmuje jako jedyny argument identyfikator obiektu, a zwraca listę cech
+liczbowych typu `List[float]`. Ta metoda domyślnie rzuca wyjątek `NotImplemented` i musi zostać zaimplementowana w
+klasach pochodnych. `uta.FeatureSet` udostępnia tez jedno pole `descriptors` typu `List[FeatureDescriptor]`, które klasa
+pochodna powinna wypełnić listą obiektów typu `uta.FeatureDescriptor` o identycznej długości co lista wartości zwracana
+przez `compute`. W końcu udostępniona jest metoda `compute_batch` która przyjmuje jako argument listę identyfikatorów, a
+zwraca listę list cech `List[List[float]]`, domyślnie wywołując `compute` dla każdego identyfikatora i łącząc zwracane
+listy cech w jedną listę dwuwymiarową. Implementacje mogą przeciążyć `compute_batch` jeżeli mają możliwość bardziej
+efektywnego jednoczesnego obliczania cech dla wielu obiektów na raz, np. przez zapytanie SPARQL wykorzystujące słowo
+kluczowe `VALUES`.
+
+Klasa `uta.UTA` ma API bardzo zbliżone do tego oferowanego przez `uta.RawUTA` z następującymi różnicami:
+
+* Argument `features` konstruktora jest typu `List[FeatureSet]`, zostaje zapisany jako pole `features`.
+* Metoda `add` nie ma argumentu `variants`, który nie jest potrzebny, ponieważ obliczanie wartości cech jest
+  odpowiedzialnością obiektów z pola `features`.
+* Metoda `U` przyjmuje identyfikator lub listę identyfikatorów obiektów, których cechy są obliczane za obiektów z
+  pola `features`. Zwracana jest wartość liczbowa funkcji `U` jeżeli przekazano jeden identyfikator lub lista wartości
+  liczbowych funkcji `U` jeżeli przekazano listę identyfikatorów.
+
+### Implementacja - klasa `uta.RelativeUTA`
+
+Zaobserwowano, że założenie o istnieniu jednego, globalnego rankingu składników może nie być adekwatnym modelem dla
+miary zastępowalności składników. Wprowadzono w związku z tym pewną modyfikację API klasy `uta.UTA` oraz dodatkową,
+specjalizowaną implementację klasy `uta.FeatureSet` nazwaną `uta.RelativeFeatureSet`. Obie klasy są zaimplementowane w
+pliku [uta/RelativeUTA.py](uta/RelativeUTA.py).
+
+`uta.RelativeFeatureSet` przyjmuje jako argument konstruktora obiekt klasy `uta.FeatureSet` oraz poza standardowym
+interfejsem `uta.FeatureSet` udostępnia pole `reference`, które domyślnie ma wartość `None`, a które musi zostać
+ustawione na identyfikator obiektu przed każdym wywołaniem metody `compute` lub `compute_batch`.
+`uta.RelativeFeatureSet` zamiast obliczać wartości cech w sposób bezwzględny (np. wartość energetyczna danego składnika
+wyrażona w kcal), oblicza jako cechy wartość bezwzględną różnic między cechami obiektu przekazanego jako argument do
+funkcji `compute` oraz obiektu, którego identyfikator jest w polu `reference`. Takie podejście umożliwia implementację
+opisanej we wstępie koncepcji zachowywania wartości odżywczej. Zakłada się, że brak różnicy jest zawsze najlepszą
+możliwą wartością.
+
+`uta.RelativeUTA` jest owinięciem (ang. wrapper) klasy `uta.UTA` z następującymi różnicami:
+
+* Argument konstruktora `features` jest przekazywany bezpośrednio w górę, natomiast `same_tier_is_equivalent` jest
+  zawsze ustawione na `False`.
+* Metoda `add` przyjmuje trzy argumenty: identyfikator obiektu referencyjnego `reference`, listę identyfikatorów
+  obiektów lepszych od referencyjnego `better` oraz listę obiektów gorszych `worse`. `reference` jest ustawione jako
+  wartość pola `referencje` wszystkich obiektów klasy `uta.RelativeFeatureSet` na liście `features`, a pozostałe dwa
+  argumenty są łączone jako dwuwymiarowa lista `[better, worse]` i przekazywane do metody `uta.UTA.add`.
+* Metoda `U` przyjmuje jako pierwszy argument `reference` identyfikator obiektu referencyjnego, który jest
+  wykorzystywany tak samo jak w metodzie `add`. Drugi argument i wartość zwracana mają identyczną semantykę jak
+  w `uta.UTA.U`.
+* Wprowadzona jest pomocnicza metoda `recommend`, która przyjmuje dwa argumenty: `reference` o semantyce j.w.
+  oraz `variants` stanowiący kolekcję identyfikatorów. Zwracana jest para typu `Tuple[Any, float]`, której pierwszy
+  element to element kolekcji `variants` dla którego wartość funkcji `U` jest największa (przy ustalonym `reference`), a
+  drugi arugment to wartość funkcji `U`. Ta funkcja pełni rolę rekomendera, który dla zadanego obiektu `reference` ma
+  wybrać najlepszą alternatywę z kolekcji `variants`.
+
+Testy jednostkowe i zarazem przykłady użycia znajdują się w
+pliku [uta/test/test_RelativeUTA.py](uta/test/test_RelativeUTA.py). Testy integracyjne wraz z mniej abstrakcyjnymi
+przykładami użycia znajdują się w plikach [test_diabetes.py](test_diabetes.py), [test_glutenfree.py](test_glutenfree.py)
+oraz [test_vegetarian.py](test_vegetarian.py).
 
 ## Reprezentacja wiedzy
 
