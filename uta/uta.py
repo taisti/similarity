@@ -3,7 +3,6 @@ from itertools import chain
 from typing import *
 
 from .FeatureSet import FeatureSet
-from .PiecewiseLinear import LinearPiece
 from .rawuta import RawUTA
 
 
@@ -32,16 +31,3 @@ class UTA:
         print("batch_features", batch_features)
         result = [self.uta.U(chain(*[f[i] for f in batch_features])).value for i in range(len(variants))]
         return result[0] if singular else result
-
-    def explain(self) -> List[List[List[LinearPiece]]]:
-        """
-        :return: The first dimension: features as in `self.features`; the second dimension subfeatures as in `FeatureSet.descriptors`; the third - pieces of a PiecewiseLinear function
-        """
-        raw_explanations = [ui.explain() for ui in self.uta.u]
-        i = 0
-        result = []
-        for f in self.features:
-            j = len(f.descriptors)
-            result.append(raw_explanations[i:i + j])
-            i += j
-        return result

@@ -45,21 +45,3 @@ class PiecewiseLinear:
 
     def constraints(self) -> List[NonNeg]:
         return [NonNeg(w) for w in self.weights]
-
-    def explain(self) -> List[LinearPiece]:
-        result = []
-        b_cum = self.weights[0].value
-        for i in range(len(self.points) - 1):
-            if i > 0:
-                b_cum += self.weights[i].value * (self.points[i] - self.points[i - 1])
-            b = b_cum + self.weights[i + 1].value * (-self.points[i])
-            a = self.weights[i + 1].value
-            if self.is_max:
-                result += [LinearPiece(self.points[i], self.points[i + 1], a, b)]
-            else:
-                result += [LinearPiece(-self.points[i + 1], -self.points[i], -a, b)]
-        if self.is_max:
-            return result
-        else:
-            return list(reversed(result))
-
