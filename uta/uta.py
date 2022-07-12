@@ -28,6 +28,5 @@ class UTA:
         if singular:
             variants = [variants]
         batch_features = [f.compute_batch(variants) for f in self.features]
-        print("batch_features", batch_features)
         result = [self.uta.U(chain(*[f[i] for f in batch_features])).value for i in range(len(variants))]
         return result[0] if singular else result

@@ -14,9 +14,9 @@ W przedstawionej wersji przyjęto następujące założenia:
 * zamianie poddawany jest jeden składnik na raz, a nie grupa składników;
 * wynikiem zamiany jest jeden składnik, a nie grupa składników;
 * nie rozważa się ilości produktów;
-* nie uwzględnia się przepisu, na potrzeby którego dokonywana jest zamiana;
-* miara powinna być oferować użytkownikowi wyjaśnialność decyzji, w szczególności unikając złożonych modeli typu *czarna
-  skrzynka* czy wykorzysytwania wektorów zanurzeń.
+* nie uwzględnia się przepisu, na którego potrzeby dokonywana jest zamiana;
+* miara powinna oferować użytkownikowi wyjaśnialność decyzji, w szczególności unikając złożonych modeli typu *czarna
+  skrzynka* czy wykorzystywania wektorów zanurzeń.
 
 W toku prac zidentyfikowano kilka wymiarów, które mogą wpływać na zamienianie składników. Należy zaznaczyć, że nie jest
 to lista wyczerpująca ani zakorzeniona w studiach literaturowych. Wymiary, poza wyjaśnieniem, opisane są też wprowadzaną
@@ -86,10 +86,10 @@ wymienione powyżej cechy.
 
 Jako bazę dla zaproponowanej metody tworzenia miar wykorzystano metodę wielokryterialnego wspomagania decyzji UTA [4].
 Bardziej szczegółowe, a przystępnie napisane wprowadzenie do UTA można znaleźć w [5], poniżej natomiast przedstawiono
-podsumowanie najważniejszych aspektów. Ze względu na spodziewane grono odbiorców raportu zapożycza się stosowane w
-uczeniu masznowym pojęcia, m.in., *parametru* jako wartości liczbowej dobieranej automatycznie w procesie optymalizacji
-oraz *hiperparametru* jako parametru konfiguracyjnego zwyczajowo ustawianego przez użytkownika. Należy podkreślić, że
-nie są to terminy zwyczajowo stosowane w kontekście metod wielokryterialnego wspomagania decyzji.
+podsumowanie najważniejszych aspektów. Ze względu na spodziewane grono odbiorców zapożycza się stosowane w uczeniu
+masznowym pojęcia, m.in., *parametru* jako wartości liczbowej dobieranej automatycznie w procesie optymalizacji oraz *
+hiperparametru* jako parametru konfiguracyjnego zwyczajowo ustawianego przez użytkownika. Należy podkreślić, że nie są
+to terminy zwyczajowo stosowane w kontekście metod wielokryterialnego wspomagania decyzji.
 
 UTA zakłada, że istnieje pewien zbiór obiektów (wariantów) opisanych cechami liczbowymi. Każda z cech może być albo
 maksymalizowana albo minimalizowana (hiperparametr), znana jest też jej wartość najlepsza i najgorsza (hiperparamter). W
@@ -118,10 +118,11 @@ wariantach: `a` jest preferowane nad `b` jeżeli `U(a) > U(b)` albo `a` jest nie
 
 ### Implementacja - klasa `uta.RawUTA`
 
-Konsultacja z prof. Miłoszem Kadzińskim wykazała, że nie ma ogólnie przyjętej, powszechnie używanej biblioteki metod
-wspomagania decyzji w Pythonie. W związku z prostotą UTA podjęto decyzję o samodzielnej implementacji przy wykorzystaniu
-solwera cvxpy [6]. Implementacja dostępna jest w klasie `uta.RawUTA` w pliku [uta/rawuta.py](uta/rawuta.py). Konstruktor
-klasy `RawUTA` przyjmuje dwa argumenty:
+Konsultacja z prof. Miłoszem Kadzińskim, specjalistą w dziedzinie wielokryterialnego wspomagania decyzji pracującym w
+Instytucie Informatyki Politechniki Poznańskiej, wykazała, że nie ma ogólnie przyjętej, powszechnie używanej biblioteki
+metod wspomagania decyzji w Pythonie. W związku z prostotą UTA podjęto decyzję o samodzielnej implementacji przy
+wykorzystaniu biblioteki cvxpy [6]. Implementacja dostępna jest w klasie `uta.RawUTA` w
+pliku [uta/rawuta.py](uta/rawuta.py). Konstruktor klasy `RawUTA` przyjmuje dwa argumenty:
 
 * `features` typu `Sequence[Tuple[int, float, float]]` - Sekwencja (np. lista) opisująca hiperparametry cech w formie
   trójek, składających się kolejno z: liczby odcinków liniowych, wartości najgorszej, wartości najlepszej.
@@ -147,7 +148,7 @@ Obiekt klasy `RawUTA` w ramach publicznego API oferuje trzy metody:
 * Bezargumentową metodę `solve`, którą należy wywołać po wszystkich wywołaniach `add` w celu rozwiązania problemu
   programowania liniowego.
 * Jednoargumenowej metody `U`, której jedyny argument to sekwencja wartości cech opisujących obiekt, dla którego ma być
-  obliczona wartość globalnej funkcji użyteczności `U`. Zwracany jest obiekt typu `cp.Expression`, którego wartość
+  obliczona wartość globalnej funkcji użyteczności `U`. Zwracany jest obiekt typu `cvxpy.Expression`, którego wartość
   liczbową można odczytać za pomocą pola `value`.
 
 Testy jednostkowe oparte na [5], a zarazem przykłady użycia klasy `uta.RawUTA` znajdują się w
@@ -158,7 +159,7 @@ pliku [uta/test/test_rawuta.py](uta/test/test_rawuta.py).
 Klasa `uta.RawUTA` ma stosunkowo niewygodny interfejs. W związku z tym wprowadzono klasę `uta.UTA` zdefiniowaną w
 pliku [uta/uta.py](uta/uta.py) oraz wykorzystywane przez nią klasy `uta.FeatureSet` oraz `uta.FeatureDescriptor`
 zdefiniowane w pliku [uta/FeaturerSet.py](uta/FeaturerSet.py). `uta.FeatureDescriptor` to `dataclass`, której rolą jest
-przechowywanie informacji pojedynczej cesze: nazwie (pole `name` typu `str`), liczbie odcinków w funkcji odcinkami
+przechowywanie informacji o pojedynczej cesze: nazwie (pole `name` typu `str`), liczbie odcinków w funkcji odcinkami
 liniowej (pole `n` typu `int`), wartości najgorszej (pole `worst` typu `float`) oraz najlepszej (pole `best`
 typu `float`).
 
@@ -200,11 +201,11 @@ możliwą wartością.
 
 `uta.RelativeUTA` jest owinięciem (ang. wrapper) klasy `uta.UTA` z następującymi różnicami:
 
-* Argument konstruktora `features` jest przekazywany bezpośrednio w górę, natomiast `same_tier_is_equivalent` jest
-  zawsze ustawione na `False`.
+* Argument konstruktora `features` jest przekazywany bezpośrednio do konstruktora klasy `uta.UTA`,
+  natomiast `same_tier_is_equivalent` jest zawsze ustawione na `False`.
 * Metoda `add` przyjmuje trzy argumenty: identyfikator obiektu referencyjnego `reference`, listę identyfikatorów
   obiektów lepszych od referencyjnego `better` oraz listę obiektów gorszych `worse`. `reference` jest ustawione jako
-  wartość pola `referencje` wszystkich obiektów klasy `uta.RelativeFeatureSet` na liście `features`, a pozostałe dwa
+  wartość pola `reference` wszystkich obiektów klasy `uta.RelativeFeatureSet` na liście `features`, a pozostałe dwa
   argumenty są łączone jako dwuwymiarowa lista `[better, worse]` i przekazywane do metody `uta.UTA.add`.
 * Metoda `U` przyjmuje jako pierwszy argument `reference` identyfikator obiektu referencyjnego, który jest
   wykorzystywany tak samo jak w metodzie `add`. Drugi argument i wartość zwracana mają identyczną semantykę jak
@@ -228,14 +229,16 @@ Zakłada się, że każdy rozważany składnik jest identyfikowany za pomocą id
 bieżącej wersji przyjęto, że centralną częścią grafu wiedzy jest ontologia FoodOn i składniki są identyfikowane za
 pomocą IRI z jej przestrzeni nazw. Wczytywanie FoodOn zostało zaimplementowane w postaci metody `foodon` w
 pliku [helpers.py](helpers.py), która nie przyjmuje argumentów, a zwraca obiekt klasy `owlready2.Ontology` biblioteki
-owlready2 [3], [19] zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane
-z Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
+owlready2 [3], [19] zawierający wczytaną ontologię. FoodOn oraz importowane przez nią ontologie są domyślnie pobierane z
+Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
 budowania pamięci podręcznej w katalogu `cache/ontologies`.
 
 Dodatkowo z FoodOn powiązano WikiFCD [17], [18], graf wiedzy integrujący tabele wartości odżwyczych pochodzące z różnych
 źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno zintegrowane z FoodOn okazało się, że
-tak nie jest i jednocześnie a) wiele składników w WikiFCD nie jest oznaczonych identyfikatorami z FoodOn; b) wiele
-składników z FoodOn występuje w WikiFCD, ale nie ma przypisanych żadnych informacji o wartościach odżywczych.
+tak nie jest i jednocześnie
+
+1. wiele składników w WikiFCD nie jest oznaczonych identyfikatorami z FoodOn;
+2. wiele składników z FoodOn występuje w WikiFCD, ale nie ma przypisanych żadnych informacji o wartościach odżywczych.
 
 W pliku [wikifcd2foodon.json](wikifcd2foodon.json) znajdują się wszystkie powiązania między encjami WikiFCD oraz FoodOn,
 wygenerowane 29.06.2022 za pomocą następującego zapytania SPARQL zadanego do
@@ -260,12 +263,12 @@ FoodOn i WikiFCD w formie pliku tekstowego [wikifcd2foodon.tsv](wikifcd2foodon.t
 puste, linie składające się wyłącznie z białych znaków oraz linie, w których pierwszy nie-biały znak to `#` są
 ignorowane. Pozostałe linie dzielone są po białych znakach i uwzględniane są wyłącznie pierwsze dwa elementy wynikające
 z podziału. Oczekuje się, że pierwszy element będzie identyfikatorem z WikiFCD, albo w formie pełnego IRI, albo w formie
-wyłącznie części lokalnej (ang. local part, [1]), w tej sytuacji jest uzupełniany o
+wyłącznie części lokalnej (ang. local part, [1]). W tej drugiej sytuacji jest uzupełniany o
 prefiks `http://wikifcd.wiki.opencura.com/entity/` do utworzenia pełnego IRI. Analogicznie, dla drugiego elementu
 oczekuje się, że jest to albo pełne IRI encji z FoodOn, albo część lokalna, która zostaje uzupełniona
 prefiksem `http://purl.obolibrary.org/obo/`. Odwzorowania w [wikifcd2foodon.tsv](wikifcd2foodon.tsv) mają priorytet nad
 tymi zgromadzonymi w [wikifcd2foodon.json](wikifcd2foodon.json), tzn. w razie odwzorowania encji z FoodOn w obu plikach
-uwzględniane jest to z `[wikifcd2foodon.tsv](wikifcd2foodon.tsv).
+uwzględniane jest odwzorowanie z [wikifcd2foodon.tsv](wikifcd2foodon.tsv).
 
 Integracja z WikiFCD została zaimplementowana w formie klasy `WikiFCD` w pliku [WikiFCD.py](WikiFCD.py). Wczytywanie
 odwzorowań z plików odbywa się w bezparametrowym konstruktorze klasy, natomiast pobieranie informacji z WikiFCD odbywa
@@ -288,7 +291,7 @@ identyfikatorom z WikiFCD.
 W celu przejścia z reprezentacji w formie grafu wiedzy do reprezentacji w formie wektorów liczbowych, wymaganych przez
 metodę UTA zaproponowano dwie klasy: `OWLReadyClassMembershipFeatureSet` zaimplementowaną w
 pliku [OWLReadyClassMembershipFeatureSet.py](OWLReadyClassMembershipFeatureSet.py) oraz `WikiFCDFeatureSet`
-zaimplementowaną w pliku [WikiFCDFeatureSet](WikiFCDFeatureSet.py). Obie klasy implementują klasę
+zaimplementowaną w pliku [WikiFCDFeatureSet.py](WikiFCDFeatureSet.py). Obie klasy implementują klasę
 abstrakcyjną `uta.FeatureSet`.
 
 Konstruktor klasy `OWLReadyClassMembershipFeatureSet` oczekuje jako argumentów dwóch sekwencji zawierających obiekty
@@ -303,18 +306,18 @@ jest podklasą).
 
 Należy zwrócić uwagę, że owlready2 nie udostępnia efektywnego mechanizmu odpytywania o zachodzenie zawierania się
 wyrażeń klasowych. Tymczasowo zastosowano przybliżone rozwiązanie za pomocą bardzo ograniczonej implementacji indukcji
-strukturalnej w jako funkcję `is_subclass` w pliku [helpers.py](helpers.py). Przedstawiona implementacja jest poprawna (
-ang. sound), ale nie kompletna (ang. complete) i docelowo powinna zostać zastąpiona rozwiązaniem, które posiada obie te
-cechy.
+strukturalnej zaimplementowanej w funkcji `is_subclass` w pliku [helpers.py](helpers.py). Przedstawiona implementacja
+jest poprawna (ang. sound), ale nie kompletna (ang. complete) i docelowo powinna zostać zastąpiona rozwiązaniem, które
+posiada obie te cechy.
 
 Klasa `WikiFCDFeatureSet` korzysta z opisanej wcześniej klasy `WikiFCD` do zbierania danych o wartościach odżywczych z
 WikiFDC. Graf zwrócony przez obiekt klasy `WikiFDC` jest odpytywany za pomocą zapytań SPARQL o cztery, zdefiniowane
-poniżej wartości. Wykorzystywana jest następująca konwencja: `?item` to obiekt, dla którego jest odczytywana
+poniżej, wartości. W opisie wykorzystywana jest następująca konwencja: `?item` to obiekt, dla którego jest odczytywana
 wartość; `?amount` to odczytywana wartość; prefiks `p:` reprezentuje przestrzeń
-nazw `<http://wikifcd.wiki.opencura.com/prop/>`, `psv:` - `<http://wikifcd.wiki.opencura.com/prop/statement/value/>`
-, `wikibase:` - `<http://wikiba.se/ontology#>`, a `wb:` - `<http://wikifcd.wiki.opencura.com/entity/>`.
+nazw `http://wikifcd.wiki.opencura.com/prop/`, `psv:` - `http://wikifcd.wiki.opencura.com/prop/statement/value/`
+, `wikibase:` - `http://wikiba.se/ontology#`, a `wb:` - `http://wikifcd.wiki.opencura.com/entity/`.
 
-* Energię wyrażoną w kilokaloriach za pomocą
+* Energia wyrażona w kilokaloriach za pomocą
   wzorca `?item p:P6/psv:P6 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q11 ]`
 * Białko w gramach za pomocą wzorca `?item p:P7/psv:P7 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q8 ]`
 * Tłuszcz w gramach za pomocą wzorca `?item p:P8/psv:P8 [wikibase:quantityAmount ?amount; wikibase:quantityUnit wb:Q8 ]`
@@ -323,7 +326,8 @@ nazw `<http://wikifcd.wiki.opencura.com/prop/>`, `psv:` - `<http://wikifcd.wiki.
 
 Reprezentacja wszystkich cech jest ustawiona jako składająca się z jednego odcinka liniowego. Białko jest ustawione jako
 cecha maksymalizowana, natomiast pozostałe cechy jako minimalizowane. Metoda `compute` oczekuje identyfikatora IRI z
-onotologi FoodOn w formie łańcucha znaków `str` albo obiektu, którego atrybut `iri` będzie takim identyfikatorem.
+onotologi FoodOn w formie łańcucha znaków `str` albo obiektu, którego atrybut `iri` będzie takim identyfikatorem, a
+zwraca listę składającą się z czterech liczb zmiennoprzecinkowych odpowiadających opisanym powyżej cechom.
 
 Przykłady użycia obu klas zawarte są w testach integracyjnych w plikach [test_diabetes.py](test_diabetes.py),
 [test_glutenfree.py](test_glutenfree.py) oraz [test_vegan.py](test_vegan.py).
@@ -342,24 +346,25 @@ zwraca listę słowników, które zawierają dane z FDC. Klasa `FDC` jest w stan
 serwisu FDC oraz, dla zwiększenia efektywności, zapisać ich kopie w pamięci podręcznej w katalogu `cache/FDC`.
 
 Odwzorowanie z IRI na wewnętrzne identyfikatory baz FDC odbywa się za pomocą dwóch plików tekstowych, w których każda
-linia stanowi pojedyncze odwzorowanie i składa się kolejno z identyfikatora *FDC ID*, IRI encji lub jego lokalnej części
-oraz opcjonalnego, ignorowanego komentarza. Przy wczytywaniu puste linie oraz linie, w których pierwszy nie-biały znak
-to '#' są ignorowane, a częsci lokalne są uzupełniane do pełnych IRI przez dodanie
+linia stanowi pojedyncze odwzorowanie i składa się kolejno z następujących pól rozdzielonych białymi znakami:
+identyfikator *FDC ID*, IRI encji lub jego lokalna części oraz opcjonalny, ignorowany komentarz (do końca linii). Przy
+wczytywaniu plików puste linie, linie składające się wyłącznie z białych znaków oraz linie, w których pierwszy nie-biały
+znak to `#` są ignorowane, a części lokalne są uzupełniane do pełnych IRI przez dodanie
 prefiksu `http://purl.obolibrary.org/obo/`. Obsługiwane jest odwzorowanie jednego IRI na wiele *FDC ID*, w takim
 przypadku operator `[]` zwraca listę wszystkich odwozorowanych produktów. Odwzorowania zapisane w
 pliku [fdc2foodon.tsv](fdc2foodon.tsv) są odwzorowaniami stworzonymi ręcznie, natomiast te w
 pliku [fdc2foodon-auto.tsv](fdc2foodon-auto.tsv) zostały stworzone automatycznie przy wykorzystaniu
-funkcji `generate_mappings` zaimplementowanej w pliku `fdc.py`. Automatyczne generowanie odwzorowań polegało na
+funkcji `generate_mappings` zaimplementowanej w pliku [FDC.py](FDC.py). Automatyczne generowanie odwzorowań polegało na
 połączeniu ze sobą encji FoodOn oraz produktów z bazy FDC dla których zbiór (bez powtórzeń) słów w etykiecie encji oraz
-w polu `description` produktu były identyczne z dokładnością do kolejności i wielkości liter. Wyrywkowa ręczna analiza
-wskazała, że nie jest to idealna metoda, np. *flour tortilla* zostało odwzorowane w *tortilla flour*.
+w polu `description` produktu były identyczne z dokładnością do kolejności słów i wielkości liter. Wyrywkowa ręczna
+analiza wskazała, że nie jest to idealna metoda, np. *flour tortilla* zostało odwzorowane w *tortilla flour*.
 
-Ponieważ wczytywanie całych baz `FDC` zajmuje dużo czas zastosowano następujące optymalizacje:
+Ponieważ wczytywanie całych baz `FDC` zajmuje dużo czas, zastosowano następujące optymalizacje:
 
 * Wszystkie instancje klasy `FDC` współdzielą wczytane dane, a samo wczytywanie danych odbywa się przy pierwszym
   wywołaniu konstruktora.
 * Wszystkie produkty wymienione w plikach z odwzorowaniami są zapisywane w pamięci podręcznej, w
-  pliku `cache/FDC/mapped.json.gz`. Ten plik jest uznawany za nieaktualny i generowany na nowo jeżeli którykolwiek z
+  pliku `cache/FDC/mapped.json.gz`. Ten plik jest uznawany za nieaktualny i generowany na nowo, jeżeli którykolwiek z
   plików z odwzorowaniami ([fdc2foodon.tsv](fdc2foodon.tsv) , [fdc2foodon-auto.tsv](fdc2foodon-auto.tsv)) ma świeższą
   datę modyfikacji niż plik z pamięci podręcznej.
 
@@ -403,7 +408,7 @@ Wykorzystano `uta.RelativeUTA` oraz trzy sposoby konstruowania cech:
   jako cecha minimalizowana obliczana za pomocą `OWLReadyClassMembershipFeatureSet`
 * Przynależność do wyrażenia klasowego *gravy or sauce* `FOODON_00001931` jako cecha względna obliczana za pomocą
   klas `RelativeFeatureSet` oraz `OWLReadyClassMembershipFeatureSet`
-* Względne wartości odżywcze obliczane za pomocą `RelativeFeatureSet(WikiFCDFeatureSet())`
+* Różnice w wartościach odżywczych obliczane za pomocą `RelativeFeatureSet(WikiFCDFeatureSet())`
 
 Jako zbiór uczący przedstawiono dwa rankingi oparte o [9]:
 
@@ -420,8 +425,8 @@ Jako zbiór kandydatów przyjęto następujące encje: *red kidney bean (canned)
 raw)* `FOODON_03301710`, *canola oil* `FOODON_03302578`, *wheat gluten* `FOODON_03310809`,
 *lard* `FOODON_03302051`, *white rice flour* `FOODON_03307541`, *whole wheat flour* `FOODON_03302340`, *tamari
 sauce* `FOODON_03309556`. Testy potwierdzają, że obliczona dla podanej listy kandydatów prawidłowo wskazuje *white rice
-flour* jako bezglutenowy odpowiednik *whole wheat flour* oraz *tamari sauce* jako bezglutenowy odpowiednik zarówno dla *
-tamari sauce* jak i dla *soy sauce* `FOODON_03301115`.
+flour* jako bezglutenowy odpowiednik *whole wheat flour* oraz *tamari sauce* jako bezglutenowy odpowiednik zarówno dla
+*tamari sauce* jak i dla *soy sauce* `FOODON_03301115`.
 
 W nawiązaniu do dyskusji we wstępie należy podkreślić, że jeżeli mowa o diecie faktycznie bezglutenowej, a nie
 niskoglutenowej, to zbiór potencjalnych zastępników musi być wstępnie przefiltrowany tak, żeby wybór najlepszego
@@ -441,7 +446,7 @@ wegańskiej. Wykorzystano `uta.RelativeUTA` oraz dwa zbiory cech:
   natomiast zbiór klas negatywnych z dwóch wyrażeń: *vertebrate animal food product* OR *seafood product* OR
   *invertebrate food product* `FOODON_00001092 | FOODON_00001046 | FOODON_00001176` oraz *spice or
   herb* `FOODON_00001242`
-* Względne wartości odżywcze `RelativeFeatureSet(WikiFCDFeatureSet())`
+* Różnice w wartościach odżywczych obliczane za pomocą `RelativeFeatureSet(WikiFCDFeatureSet())`
 
 Jako zbiór uczący wykorzystano dwa rankingi:
 
@@ -457,11 +462,15 @@ Jako zbiór uczący wykorzystano dwa rankingi:
 
 Rozważano zbiór składający się z pięciu możliwych zastępników: *red kidney bean (canned)* `FOODON_03303520`, *apple (
 whole, raw)* `FOODON_03301710`, *canola oil* `FOODON_03302578`, *wheat gluten* `FOODON_03310809`,
-*lard* `FOODON_03302051`. W ramach testów wykazano, że zarówno *beef (raw)* `FOODON_03309737` jak i *pork (
-fresh)* `FOODON_03317271` są prawidłowo zamieniane na *red kidney bean (canned)*; *tallow (
+*lard* `FOODON_03302051`. W ramach testów wykazano, że zarówno *beef (raw)* `FOODON_03309737` jak i *pork
+(fresh)* `FOODON_03317271` są prawidłowo zamieniane na *red kidney bean (canned)*; *tallow (
 edible)* `FOODON_03315521` na *canola oil* (zamiast na *lard*), a *honey* `UBERON_0036016` na *apple (whole, raw)*.
 
 ## Bibliografia
+
+Jeżeli poniższa bibliografia wydaje się niekompletna to znaczy, że pozycje, które składają się wyłącznie z odnośników do
+stron Internetowych zostały zintegrowane jako odnośniki bezpośrednio w tekście. Pełna treść bibliografii znajduje się w
+pliku [README.md](README.md).
 
 [1]: https://www.w3.org/TR/turtle/
 
@@ -493,9 +502,8 @@ Badhwar R, Kanji R, Jain A, Kaur A, Nagpal R, Bagler G. FlavorDB: a database of 
 2018 Jan 4;46(D1):D1210-D1216. doi: 10.1093/nar/gkx957. PMID: 29059383; PMCID: PMC5753196.
 
 [14]: Anna Wróblewska, Agnieszka Kaliska, Maciej Pawlowski, Dawid Wisniewski, Witold Sosnowski, Agnieszka Lawrynowicz:
-TASTEset - Recipe Dataset and Food Entities Recognition Benchmark. CoRR abs/2204.07775 (
-
-2022) https://arxiv.org/abs/2204.07775
+TASTEset - Recipe Dataset and Food Entities Recognition Benchmark. CoRR abs/2204.07775 (2022)
+https://arxiv.org/abs/2204.07775
 
 [15]: https://foodon.org/
 

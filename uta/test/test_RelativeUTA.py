@@ -72,15 +72,15 @@ class RelativeUTATest(unittest.TestCase):
         def recommend(reference):
             return ruta.recommend(reference, list(data1.keys() - {reference}))[0]
 
-        self.assertEquals("b1", recommend("a1"))
-        self.assertEquals("a1", recommend("b1"))
-        self.assertEquals("a1", recommend("c1"))
-        self.assertEquals("b2", recommend("a2"))
-        self.assertEquals("a2", recommend("b2"))
-        self.assertEquals("a2", recommend("c2"))
-        self.assertEquals("b3", recommend("a3"))
-        self.assertEquals("a3", recommend("b3"))
-        self.assertEquals("a3", recommend("c3"))
+        self.assertEqual("b1", recommend("a1"))
+        self.assertEqual("a1", recommend("b1"))
+        self.assertEqual("a1", recommend("c1"))
+        self.assertEqual("b2", recommend("a2"))
+        self.assertEqual("a2", recommend("b2"))
+        self.assertEqual("a2", recommend("c2"))
+        self.assertEqual("b3", recommend("a3"))
+        self.assertEqual("a3", recommend("b3"))
+        self.assertEqual("a3", recommend("c3"))
 
 
 if __name__ == '__main__':

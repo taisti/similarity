@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import List, Dict, Sequence, Any
 
@@ -10,9 +11,10 @@ class FeatureDescriptor:
     best: float
 
 
-class FeatureSet:
+class FeatureSet(ABC):
     descriptors: List[FeatureDescriptor]
 
+    @abstractmethod
     def compute(self, id: Any) -> List[float]:
         raise NotImplemented()
 
