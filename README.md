@@ -278,13 +278,10 @@ element pary.
 
 Klasa `WikiFCD` nie operuje na zrzucie WikiFCD, zamiast tego komunikuje się bezpośrednio z kopią WikiFCD dostępną w
 Internecie. Dla zwiększenia efektywności klasa `WikiFCD` tworzy pamięć podręczną zawierającą pobrane fragmenty grafów,
-domyślnie znajdującą się w katalogu `cache/wikifcd`, który jest tworzony w konstruktorze. Nie zaimplementowano mechanizmu
-usuwania niepotrzebnych bądź nieaktualnych wpisów z pamięci podręcznej. Pamięć podręczna zorganizowana jest w formie
-nieskompresowanych plików w formacie Turtle (z rozszerzeniem `ttl`), o nazwach odpowiadających częściom lokalnym
+domyślnie znajdującą się w katalogu `cache/wikifcd`, który jest tworzony w konstruktorze. Nie zaimplementowano
+mechanizmu usuwania niepotrzebnych bądź nieaktualnych wpisów z pamięci podręcznej. Pamięć podręczna zorganizowana jest w
+formie nieskompresowanych plików w formacie Turtle (z rozszerzeniem `ttl`), o nazwach odpowiadających częściom lokalnym
 identyfikatorom z WikiFCD.
-
-Na dzień 11.07.2022 ostatni udany dostęp do Internetowej kopii WikiFCD był 04.07.2022, od tego czasu zwracany jest kod
-błędu HTTP 503 Service Temporarily Unavailable.
 
 ### Transformacja do postaci wektora liczbowego
 
@@ -330,6 +327,48 @@ onotologi FoodOn w formie łańcucha znaków `str` albo obiektu, którego atrybu
 
 Przykłady użycia obu klas zawarte są w testach integracyjnych w plikach [test_diabetes.py](test_diabetes.py),
 [test_glutenfree.py](test_glutenfree.py) oraz [test_vegan.py](test_vegan.py).
+
+### Wykorzystanie danych z serwisu Food Data Central
+
+Na dzień 12.07.2022 ostatni udany dostęp do Internetowej kopii WikiFCD był 04.07.2022, od tego czasu zwracany jest kod
+błędu *HTTP 503 Service Temporarily Unavailable*. W związku z tym opracowano alternatywny sposób zbierania informacji o
+składnikach odżywczych korzystający z baz danych udostępnianych przez *U.S. Department of Agriculture* w serwisie *Food
+Data Central* (FDC): *Foundation Foods* oraz *Global Branded Foods* w wersjach z kwietnia 2022 [20].
+
+Wczytywanie danych z plików w formacie JSON zostało zaimplementowane w formie klasy `FDC` w pliku [FDC.py](FDC.py) o
+bezparametrowym konstruktorze oraz operatorze `[]`, który oczekuje jako jedynego argumentu łańcucha znaków (`str`)
+stanowiącego pełne IRI encji z FoodOn, bądź obiektu, którego atrybut `iri` będzie takim łańcuchem znaków. Operator `[]`
+zwraca listę słowników, które zawierają dane z FDC. Klasa `FDC` jest w stanie samodzielnie pobrać niezbędne dane z
+serwisu FDC oraz, dla zwiększenia efektywności, zapisać ich kopie w pamięci podręcznej w katalogu `cache/FDC`.
+
+Odwzorowanie z IRI na wewnętrzne identyfikatory baz FDC odbywa się za pomocą dwóch plików tekstowych, w których każda
+linia stanowi pojedyncze odwzorowanie i składa się kolejno z identyfikatora *FDC ID*, IRI encji lub jego lokalnej części
+oraz opcjonalnego, ignorowanego komentarza. Przy wczytywaniu puste linie oraz linie, w których pierwszy nie-biały znak
+to '#' są ignorowane, a częsci lokalne są uzupełniane do pełnych IRI przez dodanie
+prefiksu `http://purl.obolibrary.org/obo/`. Obsługiwane jest odwzorowanie jednego IRI na wiele *FDC ID*, w takim
+przypadku operator `[]` zwraca listę wszystkich odwozorowanych produktów. Odwzorowania zapisane w
+pliku [fdc2foodon.tsv](fdc2foodon.tsv) są odwzorowaniami stworzonymi ręcznie, natomiast te w
+pliku [fdc2foodon-auto.tsv](fdc2foodon-auto.tsv) zostały stworzone automatycznie przy wykorzystaniu
+funkcji `generate_mappings` zaimplementowanej w pliku `fdc.py`. Automatyczne generowanie odwzorowań polegało na
+połączeniu ze sobą encji FoodOn oraz produktów z bazy FDC dla których zbiór (bez powtórzeń) słów w etykiecie encji oraz
+w polu `description` produktu były identyczne z dokładnością do kolejności i wielkości liter. Wyrywkowa ręczna analiza
+wskazała, że nie jest to idealna metoda, np. *flour tortilla* zostało odwzorowane w *tortilla flour*.
+
+Ponieważ wczytywanie całych baz `FDC` zajmuje dużo czas zastosowano następujące optymalizacje:
+
+* Wszystkie instancje klasy `FDC` współdzielą wczytane dane, a samo wczytywanie danych odbywa się przy pierwszym
+  wywołaniu konstruktora.
+* Wszystkie produkty wymienione w plikach z odwzorowaniami są zapisywane w pamięci podręcznej, w
+  pliku `cache/FDC/mapped.json.gz`. Ten plik jest uznawany za nieaktualny i generowany na nowo jeżeli którykolwiek z
+  plików z odwzorowaniami ([fdc2foodon.tsv](fdc2foodon.tsv) , [fdc2foodon-auto.tsv](fdc2foodon-auto.tsv)) ma świeższą
+  datę modyfikacji niż plik z pamięci podręcznej.
+
+Na bazie klasy `FDC` zaimplementowano w pliku [FDC.py](FDC.py) klasę `FDCFeatureSet`, która z punktu widzenia API oraz
+zwracanych cech stanowi bezpośredni zastępnik dla klasy `WikiFCDFeatureSet`. Ze względu na możliwośc odwzorowania jednej
+encji w wiele produktów z FDC zastosowano uśrednianie, tzn. jako wartość danej cechy dla encji przyjmowana jest średnia
+wartość danej cechy po wszystkich odzwzorowanych produktach. W związku z awarią WikiFDC zastąpiono w testach
+integracyjnych odwołania do klasy `WikiFCDFeatureSet` odwołaniami do klasy `FDCFeatureSet` bez pogorszenia wyników
+testów.
 
 ## Przypadki użycia
 
@@ -454,7 +493,9 @@ Badhwar R, Kanji R, Jain A, Kaur A, Nagpal R, Bagler G. FlavorDB: a database of 
 2018 Jan 4;46(D1):D1210-D1216. doi: 10.1093/nar/gkx957. PMID: 29059383; PMCID: PMC5753196.
 
 [14]: Anna Wróblewska, Agnieszka Kaliska, Maciej Pawlowski, Dawid Wisniewski, Witold Sosnowski, Agnieszka Lawrynowicz:
-TASTEset - Recipe Dataset and Food Entities Recognition Benchmark. CoRR abs/2204.07775 (2022) https://arxiv.org/abs/2204.07775
+TASTEset - Recipe Dataset and Food Entities Recognition Benchmark. CoRR abs/2204.07775 (
+
+2022) https://arxiv.org/abs/2204.07775
 
 [15]: https://foodon.org/
 
@@ -468,6 +509,8 @@ Single Knowledge Base. JOWO 2021
 
 [19]: Lamy JB. Owlready: Ontology-oriented programming in Python with automatic classification and high level constructs
 for biomedical ontologies. Artificial Intelligence In Medicine 2017;80:11-28
+
+[20]: https://fdc.nal.usda.gov/download-datasets.html
 
 ## Załącznik I: Zliczanie podklas klasy `FOODON_00001002`
 

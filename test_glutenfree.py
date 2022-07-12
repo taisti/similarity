@@ -1,5 +1,6 @@
 import unittest
 
+from FDC import FDCFeatureSet
 from OWLReadyClassMembershipFeatureSet import OWLReadyClassMembershipFeatureSet
 from WikiFCDFeatureSet import WikiFCDFeatureSet
 from helpers import foodon
@@ -28,7 +29,7 @@ class GlutenFree(unittest.TestCase):
 
         uta = RelativeUTA([OWLReadyClassMembershipFeatureSet([], negative_classes),
                            RelativeFeatureSet(OWLReadyClassMembershipFeatureSet(positive_classes, [])),
-                           RelativeFeatureSet(WikiFCDFeatureSet())
+                           RelativeFeatureSet(FDCFeatureSet())
                            ])
         # https://www.cooksmarts.com/articles/gluten-free-diet-substitutions-list/
         rankings = [

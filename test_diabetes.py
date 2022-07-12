@@ -1,6 +1,6 @@
 import unittest
 
-from WikiFCDFeatureSet import WikiFCDFeatureSet
+from FDC import FDCFeatureSet
 from helpers import foodon
 from uta import RelativeFeatureSet, RelativeUTA
 
@@ -13,8 +13,8 @@ class Diabetes(unittest.TestCase):
         cls.obo = obo = cls.onto.get_namespace("http://purl.obolibrary.org/obo/")
 
         uta = RelativeUTA([
-            WikiFCDFeatureSet(),
-            RelativeFeatureSet(WikiFCDFeatureSet())
+            FDCFeatureSet(),
+            RelativeFeatureSet(FDCFeatureSet())
         ])
 
         rankings = [

@@ -1,7 +1,7 @@
 import unittest
 
+from FDC import FDCFeatureSet
 from OWLReadyClassMembershipFeatureSet import OWLReadyClassMembershipFeatureSet
-from WikiFCDFeatureSet import WikiFCDFeatureSet
 from helpers import foodon
 from uta import RelativeFeatureSet, RelativeUTA
 
@@ -29,7 +29,7 @@ class Vegan(unittest.TestCase):
         ]
 
         uta = RelativeUTA([OWLReadyClassMembershipFeatureSet(positive_classes, negative_classes),
-                           RelativeFeatureSet(WikiFCDFeatureSet())
+                           RelativeFeatureSet(FDCFeatureSet())
                            ])
 
         rankings = [
