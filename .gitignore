@@ -1,7 +1,6 @@
 attic/
-wikifcd/
+cache/
 **/__pycache__/
 .idea/
 .ipynb_checkpoints/
-ontologies/
 *.local.*

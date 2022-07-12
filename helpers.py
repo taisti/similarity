@@ -29,5 +29,5 @@ def textual(ent: ClassExpression):
 
 def foodon() -> owlready2.Ontology:
     url = 'https://github.com/FoodOntology/foodon/blob/master/foodon.owl?raw=true'
-    owlready2.onto_path.append('ontologies/')
+    owlready2.onto_path.append('cache/ontologies/')
     return owlready2.get_ontology(url).load()

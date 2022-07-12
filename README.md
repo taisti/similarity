@@ -230,7 +230,7 @@ pomocą IRI z jej przestrzeni nazw. Wczytywanie FoodOn zostało zaimplementowane
 pliku [helpers.py](helpers.py), która nie przyjmuje argumentów, a zwraca obiekt klasy `owlready2.Ontology` biblioteki
 owlready2 [3], [19] zawierający wczytaną ontologię. FoodOn oraz importowane przez niego ontologie są domyślnie pobierane
 z Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowany w bibliotekę owlready2 mechanizm
-budowania pamięci podręcznej w katalogu `ontologies`.
+budowania pamięci podręcznej w katalogu `cache/ontologies`.
 
 Dodatkowo z FoodOn powiązano WikiFCD [17], [18], graf wiedzy integrujący tabele wartości odżwyczych pochodzące z różnych
 źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno zintegrowane z FoodOn okazało się, że
@@ -278,7 +278,7 @@ element pary.
 
 Klasa `WikiFCD` nie operuje na zrzucie WikiFCD, zamiast tego komunikuje się bezpośrednio z kopią WikiFCD dostępną w
 Internecie. Dla zwiększenia efektywności klasa `WikiFCD` tworzy pamięć podręczną zawierającą pobrane fragmenty grafów,
-domyślnie znajdującą się w katalogu `wikifcd`, który jest tworzony w konstruktorze. Nie zaimplementowano mechanizmu
+domyślnie znajdującą się w katalogu `cache/wikifcd`, który jest tworzony w konstruktorze. Nie zaimplementowano mechanizmu
 usuwania niepotrzebnych bądź nieaktualnych wpisów z pamięci podręcznej. Pamięć podręczna zorganizowana jest w formie
 nieskompresowanych plików w formacie Turtle (z rozszerzeniem `ttl`), o nazwach odpowiadających częściom lokalnym
 identyfikatorom z WikiFCD.

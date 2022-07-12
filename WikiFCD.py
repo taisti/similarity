@@ -9,8 +9,8 @@ from rdflib import URIRef
 
 class WikiFCD:
 
-    def __init__(self):
-        self.cache_root = Path('wikifcd')
+    def __init__(self, cache_root='cache/wikifcd'):
+        self.cache_root = Path(cache_root)
         self.cache_root.mkdir(parents=True, exist_ok=True)
         assert self.cache_root.is_dir()
         with open('wikifcd2foodon.json', 'rt') as f:
