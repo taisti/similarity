@@ -234,7 +234,7 @@ Internetu, natomiast dla zwiększenia efektywności wykorzystywany jest wbudowan
 budowania pamięci podręcznej w katalogu `cache/ontologies`.
 
 Dodatkowo z FoodOn powiązano WikiFCD [17], [18], graf wiedzy integrujący tabele wartości odżwyczych pochodzące z różnych
-źródeł do współnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno zintegrowane z FoodOn okazało się, że
+źródeł do wspólnej reprezentacji. Mimo początkowych nadziei, że WikiFCD jest mocno zintegrowane z FoodOn okazało się, że
 tak nie jest i jednocześnie
 
 1. wiele składników w WikiFCD nie jest oznaczonych identyfikatorami z FoodOn;
@@ -383,7 +383,7 @@ Założono, że w diecie cukrzycowej preferowane powinny być produkty o niskim 
 ani w WikiFCD indeks glikemiczny nie jest dostępny, stanowi on zatem złoty standard, z którego nie można bezpośrednio
 skorzystać w obliczeniach, ale który można wykorzystać do oceny. W ramach testu przedstawionego w klasie `Diabetes`
 zaimplementowanej w pliku [test_diabetes.py](test_diabetes.py) wykorzystano
-`uta.RelativeUTA` oparte na cecach generowanych przez `WikiFCDFeatureSet` oraz na ich wartościach zrelatywizowanych za
+`uta.RelativeUTA` oparte na cechach generowanych przez `WikiFCDFeatureSet` oraz na ich wartościach zrelatywizowanych za
 pomocą `RelativeFeatureSet`. Jako złoty standard wykorzystano informacje pochodzące z [7]. W ramach zbioru uczącego (
 znanego preporządku) wykorzystano trzy mąki, przedstawione w kolejności od najlepszej do najgorszej: *soybean
 flour* `obo.FOODON_03302142` (niski IG), *rye flour* `obo.FOODON_03302492` (średni IG), *white rice
