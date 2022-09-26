@@ -16,7 +16,12 @@ W przedstawionej wersji przyjęto następujące założenia:
 * nie rozważa się ilości produktów;
 * nie uwzględnia się przepisu, na którego potrzeby dokonywana jest zamiana;
 * miara powinna oferować użytkownikowi wyjaśnialność decyzji, w szczególności unikając złożonych modeli typu *czarna
-  skrzynka* czy wykorzystywania wektorów zanurzeń.
+  skrzynka* czy wykorzystywania wektorów zanurzeń;
+* istnieją dwie, zasadniczo różniące się od siebie role: *ekspert dziedzinowy*, który w ramach przedstawionej metody
+  definiuje niezbędne elementy, żeby uzyskać miarę zastępowalności pod konkretną specyfikację (np. zastępowanie w diecie
+  cukrzycowej), a który ma całą niezbędną wiedzę, żeby ocenić wynik działania systemu oraz *użytkownika końcowego*,
+  który korzysta z miary zdefiniowanej przez eksperta dziedzinowego i nie posiada niezbędnej wiedzy do oceny działania
+  systemu.
 
 W toku prac zidentyfikowano kilka wymiarów, które mogą wpływać na zamienianie składników. Należy zaznaczyć, że nie jest
 to lista wyczerpująca ani zakorzeniona w studiach literaturowych. Wymiary, poza wyjaśnieniem, opisane są też wprowadzaną
@@ -115,6 +120,20 @@ w czasie wielomianowym.
 
 Wynikiem działania UTA jest globalna funkcja użyteczności `U`, która definiuje preporządek na wszystkich rozważanych
 wariantach: `a` jest preferowane nad `b` jeżeli `U(a) > U(b)` albo `a` jest nierozróżnialne z `b` jeżeli `U(a) = U(b)`.
+
+W kontekście rozważanego zagadnienia zastępowalności składników należy zwrócić uwagę, że za zdefiniowanie wartości
+hiperparametrów odpowiedzialny jest ekspert dziedzinowy, a nie użytkownik końcowy. Użytkownik końcowy korzysta (za
+pośrednictwem odpowiedniego interfejsu użytkownika) dopiero z gotowej globalnej funkcji użyteczności `U`.
+
+Ponadto należy zwrócić uwagę, że ranking jest niezbędnym elementem odkrywania preferencji eksperta dziedzinowego. Bez
+rankingu można wyznaczyć tylko front Pareto, tzn. zbiór obiektów niezdominowanych przez żaden inny, natomiast nie można
+zbudować rankingu, ponieważ bez wiedzy o względnej ważności cech, o żadnej parze wariantów na froncie Pareto nie da się
+jednoznacznie powiedzieć, żeby jeden element był lepszy od drugiego. Dla przykładu rozważmy dwa obiekty: `a` oraz `b`
+oraz dwie maksymalizowane cechy. Niech `a` będzie miał wartości na tych cechach `(0.2, 0.8)`, natomiast `b`
+odpowiednio `(0.8, 0.2)`. Ponieważ cechy są maksymalizowane, więc `b` jest lepsze od `a` na pierwszej cesze,
+natomiast `a` jest lepsze od `b` na drugiej cesze. Bez dodatkowej wiedzy o względnej ważności cech (w UTA
+reprezentowanej przez parametry cząstkowych funkcji użyteczności) nie da się stwierdzić czy, z punktu widzenia eksperta
+dziedznowego, `a` jest lepsze od `b`, `b` jest lepsze od `a` czy może są nierozróżnialne.
 
 ### Implementacja - klasa `uta.RawUTA`
 
